@@ -27,14 +27,13 @@ Once the marketplace is added, list and install plugins with:
 or install directly by name:
 
 ```
-/plugin install quality-review-plugin@scottlovy-marketplace
+/plugin install pip-code-reviewer-plugin@scottlovy-marketplace
 ```
 
 ## Available plugins
 
 | Plugin | Description |
 |---|---|
-| [quality-review-plugin](plugins/quality-review-plugin) | Adds a `quality-review` skill for quick code reviews (bugs, security, performance, readability) |
 | [pip-code-reviewer-plugin](plugins/pip-code-reviewer-plugin) | Adds a `pip-code-reviewer` skill: a comprehensive parallel code review that fans out subagents per dimension (security, performance, architecture, testing, etc.), synthesizes a report, applies fixes, and loops until clean |
 | [pip-github-pr-plugin](plugins/pip-github-pr-plugin) | Adds a `pip-github-pr` skill: generates PR content from the diff, opens a browser form to review/edit it, and creates the GitHub Pull Request for the PIP repository |
 
