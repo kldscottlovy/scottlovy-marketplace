@@ -35,6 +35,7 @@ or install directly by name:
 | Plugin | Description |
 |---|---|
 | [quality-review-plugin](plugins/quality-review-plugin) | Adds a `quality-review` skill for quick code reviews (bugs, security, performance, readability) |
+| [pip-code-reviewer-plugin](plugins/pip-code-reviewer-plugin) | Adds a `pip-code-reviewer` skill: a comprehensive parallel code review that fans out subagents per dimension (security, performance, architecture, testing, etc.), synthesizes a report, applies fixes, and loops until clean |
 
 ## Repository layout
 

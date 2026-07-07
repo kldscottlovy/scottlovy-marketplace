@@ -8,6 +8,11 @@
       "name": "quality-review-plugin",
       "source": "./plugins/quality-review-plugin",
       "description": "Adds a quality-review skill for quick code reviews"
+    },
+    {
+      "name": "pip-code-reviewer-plugin",
+      "source": "./plugins/pip-code-reviewer-plugin",
+      "description": "Comprehensive parallel code review skill for PIP: fans out per-dimension subagents, synthesizes findings, applies fixes, and loops until clean"
     }
   ]
 }
