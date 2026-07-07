@@ -1,0 +1,5 @@
+{
+  "name": "pip-github-pr-plugin",
+  "description": "Adds a pip-github-pr skill: generates PR content from the diff, opens a browser form to review/edit it, and creates the GitHub Pull Request for the PIP repository.",
+  "version": "1.0.0"
+}

@@ -13,6 +13,11 @@
       "name": "pip-code-reviewer-plugin",
       "source": "./plugins/pip-code-reviewer-plugin",
       "description": "Comprehensive parallel code review skill for PIP: fans out per-dimension subagents, synthesizes findings, applies fixes, and loops until clean"
+    },
+    {
+      "name": "pip-github-pr-plugin",
+      "source": "./plugins/pip-github-pr-plugin",
+      "description": "Generates PR content from the diff, opens a browser form to review/edit it, and creates the GitHub Pull Request for the PIP repository"
     }
   ]
 }
