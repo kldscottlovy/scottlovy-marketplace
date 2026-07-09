@@ -12,4 +12,6 @@ Review ONLY for Project Guidelines adherence:
 - EF entities in PIP.EF/Entities/PIP/
 - Services depend on IXxxQueryProvider, not PIPContext
 
+- Controllers depend on IXxxService, not IXxxQueryProvider or PIPContext
+
 Return findings only for this dimension. Be specific with file paths and line numbers from the diff.
