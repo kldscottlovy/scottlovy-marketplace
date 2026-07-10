@@ -104,6 +104,19 @@ const FINDINGS_SCHEMA = {
         required: ['location', 'issue', 'impact', 'fix'],
       },
     },
+    easyfixes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          location: { type: 'string' },
+          issue: { type: 'string' },
+          impact: { type: 'string' },
+          fix: { type: 'string' },
+        },
+        required: ['location', 'issue', 'impact', 'fix'],
+      },
+    },
     suggestions: {
       type: 'array',
       items: {
@@ -119,7 +132,7 @@ const FINDINGS_SCHEMA = {
     },
     positives: { type: 'array', items: { type: 'string' } },
   },
-  required: ['dimension', 'critical', 'important', 'suggestions', 'positives'],
+  required: ['dimension', 'critical', 'important', 'easyfixes', 'suggestions', 'positives'],
 }
 
 const { dimensions } = args
