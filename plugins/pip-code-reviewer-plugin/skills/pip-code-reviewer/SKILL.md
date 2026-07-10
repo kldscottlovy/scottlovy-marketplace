@@ -26,13 +26,13 @@ Before launching agents, collect the inputs they all need:
   ```
   base_context = `
   You are reviewing a C# pull request. Branch: <branchName>
-
+  
   Changed files:
   <changedFiles>
-
+  
   Full diff:
   <diff>
-
+  
   Project guidelines:
   <sharedRefs['csharp-guidelines']>
   `
@@ -162,6 +162,9 @@ Branch: <branch name>
 ## Important Issues (should fix)
 [numbered, with Location / Issue / Impact / Fix for each]
 
+## Easy Fixes (must fix)
+[numbered, with Location / Issue / Impact / Fix for each]
+
 ## Suggestions (nice to have)
 [numbered, with Location / Issue / Impact / Fix for each]
 
@@ -174,7 +177,7 @@ Assign a unique sequential number to every issue across all dimensions so each c
 ### 5. Apply Fixes and Loop
 
 After writing the report:
-1. Apply all **Critical** and **Important** fixes to the codebase.
+1. Apply all **Critical**, **Important** and **Easy Fixes** to the codebase.
 2. Run `dotnet build PIP.sln` — fix any build errors before proceeding.
 3. **Loop condition**: if the report contains **any Critical or Important issues**, immediately re-run the full review (steps 2–5) and write a new uniquely-named report. Continue looping until a review pass produces a report with **zero Critical and zero Important issues**, or until **10 total cycles** have completed — whichever comes first.
 4. At the start of each new cycle, log the cycle number (e.g. "Starting review cycle 2/10") so progress is visible.

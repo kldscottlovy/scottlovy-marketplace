@@ -11,6 +11,9 @@ Review ONLY for Code Quality and Maintainability:
 - Cyclomatic complexity and method length
 - Code duplication and reusability
 - Magic numbers and hard-coded values
-- Boolean simplification (The expression 'A == true' can be simplified to 'A'.) or (The expression 'A == false' can be simplified to '!A'.)
+
+#### Easy Fixes
+
+- Boolean simplification (The expression 'A == true' can be simplified to 'A'.) or (The expression 'A == false' can be simplified to '!A'.) 
 
 Return findings only for this dimension. Be specific with file paths and line numbers from the diff.
