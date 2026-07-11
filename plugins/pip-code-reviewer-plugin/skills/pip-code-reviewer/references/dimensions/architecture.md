@@ -4,6 +4,8 @@ label: Architecture & Patterns
 ---
 {{base_context}}
 
+{{architecture}}
+
 Review ONLY for Architecture & Patterns:
 - QueryProvider pattern (services must use IXxxQueryProvider, never PIPContext directly)
 - Appropriate layer separation

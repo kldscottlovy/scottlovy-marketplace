@@ -4,6 +4,8 @@ label: Duplication & Consolidation
 ---
 {{base_context}}
 
+{{duplication}}
+
 You have access to the full current content of every changed file, plus their state on the base branch before this branch diverged:
 
 {{full_file_contents}}

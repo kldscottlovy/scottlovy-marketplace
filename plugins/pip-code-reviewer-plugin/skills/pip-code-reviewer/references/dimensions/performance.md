@@ -4,6 +4,8 @@ label: Performance
 ---
 {{base_context}}
 
+{{performance}}
+
 Review ONLY for Performance:
 - Database query efficiency
 - N+1 query problems

@@ -4,6 +4,8 @@ label: Testing
 ---
 {{base_context}}
 
+{{testing}}
+
 Testing standards:
 {{testing-standards}}
 

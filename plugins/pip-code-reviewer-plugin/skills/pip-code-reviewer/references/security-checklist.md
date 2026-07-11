@@ -1,6 +1,6 @@
 # Security Review Checklist
 
-Comprehensive security guidelines for reviewing Nebula codebase, based on OWASP Top 10 and common vulnerability patterns.
+Comprehensive security guidelines for reviewing the PIP codebase, based on OWASP Top 10 and common vulnerability patterns.
 
 ## OWASP Top 10 Quick Reference
 
@@ -35,17 +35,17 @@ Comprehensive security guidelines for reviewing Nebula codebase, based on OWASP 
 
 **C# Example (Good):**
 ```csharp
+[Authorize]
 [HttpPost]
-[Permissions(PermissionKey.DocumentEdit)]
-public async Task<IActionResult> UpdateDocument([FromBody] UpdateDocumentRequest request)
+public async Task<IActionResult> UpdateTask([FromBody] TaskUpdateModel request)
 {
     // Validation via model attributes
     if (!ModelState.IsValid)
         return BadRequest(ModelState);
 
     // Additional business validation
-    if (request.DocumentId <= 0)
-        return Problem("Invalid document ID", statusCode: 400);
+    if (request.TaskId <= 0)
+        return Problem("Invalid task ID", statusCode: 400);
 
     // Proceed with validated input
 }
@@ -54,10 +54,10 @@ public async Task<IActionResult> UpdateDocument([FromBody] UpdateDocumentRequest
 **C# Example (Bad):**
 ```csharp
 [HttpPost]
-public async Task<IActionResult> UpdateDocument([FromBody] dynamic request)
+public async Task<IActionResult> UpdateTask([FromBody] dynamic request)
 {
     // No validation! Anything could be in request
-    var docId = request.DocumentId; // Could be null, negative, etc.
+    var taskId = request.TaskId; // Could be null, negative, etc.
 }
 ```
 
@@ -94,62 +94,16 @@ public async Task<IActionResult> UploadFile(IFormFile file)
 
 ## SQL Injection Prevention
 
-### Always Use Parameters
+See the Raw SQL rule in this dimension's PIP guideline excerpt. If a dynamic column/identifier is ever required (e.g. a sort column from user input), whitelist it against a known set rather than interpolating it directly into the query:
 
-**Good - Parameterized Query:**
 ```csharp
-using var cmd = dataSource.CreateCommand();
-cmd.CommandText = "SELECT * FROM documents WHERE document_id = @docId";
-cmd.Parameters.AddWithValue("@docId", documentId);
-```
+private static readonly HashSet<string> AllowedColumns = new() { "TaskId", "Description", "DateCreated" };
 
-**Bad - String Concatenation:**
-```csharp
-// NEVER DO THIS!
-var sql = $"SELECT * FROM documents WHERE document_id = {documentId}";
-```
-
-**Good - IN clause with parameters:**
-```csharp
-var ids = new[] { 1, 2, 3 };
-var parameters = string.Join(",", ids.Select((_, i) => $"@p{i}"));
-cmd.CommandText = $"SELECT * FROM documents WHERE document_id IN ({parameters})";
-for (int i = 0; i < ids.Length; i++)
-{
-    cmd.Parameters.AddWithValue($"@p{i}", ids[i]);
-}
-```
-
-**Dynamic Column Names:**
-```csharp
-// If you must use dynamic identifiers, use a whitelist
-private static readonly HashSet<string> AllowedColumns = new()
-{
-    "document_id", "title", "date_created"
-};
-
-public void GetDocuments(string sortColumn)
+public void GetTasks(string sortColumn)
 {
     if (!AllowedColumns.Contains(sortColumn))
         throw new ArgumentException("Invalid column name");
-
-    // Now safe to use (whitelisted)
-    var sql = $"SELECT * FROM documents ORDER BY {sortColumn}";
 }
-```
-
-### SOLR Query Injection
-
-**Good - Escaped queries:**
-```csharp
-var escapedQuery = SolrQueryEscaper.Escape(userInput);
-var query = new SolrQuery($"content:{escapedQuery}");
-```
-
-**Bad - Unescaped user input:**
-```csharp
-// User could inject SOLR operators like OR, AND, *
-var query = new SolrQuery($"content:{userInput}");
 ```
 
 ## Cross-Site Scripting (XSS) Prevention
@@ -204,78 +158,7 @@ element.setAttribute('data-value', userInput);
 
 ## Authentication & Authorization
 
-### Permission Checks
-
-**Required locations for permission checks:**
-1. **Controller level** (primary enforcement)
-2. **UI level** (hide/disable features - UX only, not security)
-3. **API Gateway level** (if applicable)
-
-**Good - Permission attribute:**
-```csharp
-[HttpPost("documents/{id}/delete")]
-[Permissions(PermissionKey.DocumentDelete)]
-public async Task<IActionResult> DeleteDocument(int id)
-{
-    // Permission already checked by framework
-    await _documentService.DeleteAsync(id);
-    return Ok();
-}
-```
-
-**Bad - Service-level permission check:**
-```csharp
-[HttpPost("documents/{id}/delete")]
-public async Task<IActionResult> DeleteDocument(int id)
-{
-    // Too late! This should be in controller
-    await _documentService.DeleteAsync(id); // Service checks internally
-    return Ok();
-}
-```
-
-### Manual Permission Checks
-
-When attribute-based checks aren't sufficient:
-
-```csharp
-[HttpPost("documents/bulk-delete")]
-[Permissions(PermissionKey.DocumentDelete)]
-public async Task<IActionResult> BulkDelete([FromBody] BulkDeleteRequest request)
-{
-    // Additional runtime permission check
-    if (request.DocumentIds.Count > 1000)
-    {
-        var hasAdminPermission = await _permissionService.HasPermissionsAsync(
-            PermissionKey.SystemAdmin);
-
-        if (!hasAdminPermission)
-            return Problem("Bulk operations over 1000 require admin permission",
-                statusCode: 403);
-    }
-
-    await _documentService.BulkDeleteAsync(request.DocumentIds);
-    return Ok();
-}
-```
-
-### Repository Isolation
-
-**Critical: Never query across repositories**
-
-```csharp
-// Good - Scoped to current repository
-using var cmd = repositoryDataSource.CreateCommand();
-cmd.CommandText = "SELECT * FROM documents WHERE repository_id = @repoId";
-cmd.Parameters.AddWithValue("@repoId", CurrentRepositoryId);
-```
-
-```csharp
-// Bad - Could access other repositories' data
-using var cmd = repositoryDataSource.CreateCommand();
-cmd.CommandText = "SELECT * FROM documents WHERE document_id = @docId";
-// Missing repository_id check! Could access any repository's documents
-```
+Authorization pattern (`[Authorize]`/policies) and franchise isolation are covered in this dimension's PIP guideline excerpt (`guidelines/security.md`) — verify both are present as part of this checklist.
 
 ## Sensitive Data Protection
 
@@ -461,60 +344,13 @@ app.Use(async (context, next) =>
 });
 ```
 
-## Common Nebula-Specific Security Issues
-
-### Document Access Control
-
-**Always verify repository access:**
-```csharp
-// Check user has access to the repository containing this document
-var hasAccess = await _permissionService.HasRepositoryAccessAsync(
-    repositoryId, CurrentUserId);
-
-if (!hasAccess)
-    return Problem("Access denied", statusCode: 403);
-```
-
-### SOLR Query Security
-
-**Repository isolation in SOLR queries:**
-```csharp
-var query = new SolrQuery($"content:{escapedUserQuery}")
-{
-    FilterQueries = new[]
-    {
-        new SolrQueryByField("repository_id", CurrentRepositoryId.ToString())
-    }
-};
-```
-
-### Job System Security
-
-**Validate job permissions:**
-```csharp
-public async Task<IActionResult> StartJob(StartJobRequest request)
-{
-    // Verify user can start jobs in this repository
-    var canStartJobs = await _permissionService.HasPermissionsAsync(
-        PermissionKey.JobStart);
-
-    if (!canStartJobs)
-        return Problem("Insufficient permissions", statusCode: 403);
-
-    // Verify job parameters don't reference other repositories
-    if (request.RepositoryId != CurrentRepositoryId)
-        return Problem("Cannot start jobs in other repositories", statusCode: 403);
-}
-```
-
 ## Security Testing Checklist
 
 When reviewing code, verify:
 
 - [ ] All user input is validated
 - [ ] SQL queries use parameters
-- [ ] Permission checks are present on controllers
-- [ ] Repository isolation is enforced
+- [ ] Authorization (`[Authorize]`/policy) checks are present on controllers
 - [ ] No secrets in code
 - [ ] Sensitive data not logged
 - [ ] Error messages don't leak information

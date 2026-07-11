@@ -1,5 +1,5 @@
 {
   "name": "pip-code-reviewer-plugin",
   "description": "Comprehensive parallel code review skill for PIP: fans out per-dimension subagents (security, performance, architecture, testing, etc.), synthesizes findings into a report, applies fixes, and loops until clean.",
-  "version": "1.0.4"
+  "version": "1.0.5"
 }

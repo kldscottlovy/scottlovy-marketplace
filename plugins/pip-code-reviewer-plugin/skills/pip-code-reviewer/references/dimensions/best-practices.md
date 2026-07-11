@@ -4,6 +4,8 @@ label: C# Best Practices
 ---
 {{base_context}}
 
+{{best-practices}}
+
 Review ONLY for C# Best Practices:
 - Modern C# idioms (nullable reference types, pattern matching, records, etc.)
 - Async/await correctness — NEVER .Result or .Wait() (deadlock risk)
@@ -11,7 +13,7 @@ Review ONLY for C# Best Practices:
 - Resource management and IDisposable
 - Thread safety and concurrency
 - Memory efficiency and performance implications
-- private class variables perfixed with _
+- private class variables prefixed with _
 
 #### Easy Fixes
 
@@ -19,8 +21,8 @@ Review ONLY for C# Best Practices:
 
   **Example of fix.**
 
-  ```
-  Noncompliant code example
+  Noncompliant code example:
+  ```csharp
   public class Product
   {
       public int Id { get; set; }             // Noncompliant
@@ -28,9 +30,12 @@ Review ONLY for C# Best Practices:
       public int NumberOfItems { get; set; }  // Noncompliant
       public decimal Price { get; set; }      // Noncompliant
   }
-  If the client sends a request without setting the NumberOfItems or Price properties, they will default to 0. In the request handler method, there’s no way to determine whether they were intentionally set to 0 or omitted by mistake.
-  
-  Compliant solution
+  ```
+
+  If the client sends a request without setting the `NumberOfItems` or `Price` properties, they will default to 0. In the request handler method, there's no way to determine whether they were intentionally set to 0 or omitted by mistake.
+
+  Compliant solution:
+  ```csharp
   public class Product
   {
       public required int Id { get; set; }
@@ -40,6 +45,5 @@ Review ONLY for C# Best Practices:
   }
   ```
 
-  
 
 Return findings only for this dimension. Be specific with file paths and line numbers from the diff.

@@ -4,12 +4,13 @@ label: Code Quality & Maintainability
 ---
 {{base_context}}
 
+{{quality}}
+
 Review ONLY for Code Quality and Maintainability:
 - Naming conventions (PascalCase public, camelCase private)
 - Code readability and clarity
 - Comment quality and XML documentation
 - Cyclomatic complexity and method length
-- Code duplication and reusability
 - Magic numbers and hard-coded values
 
 #### Easy Fixes

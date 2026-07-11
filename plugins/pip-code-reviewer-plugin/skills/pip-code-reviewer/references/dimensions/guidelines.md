@@ -4,8 +4,10 @@ label: Project Guidelines
 ---
 {{base_context}}
 
+{{guidelines}}
+
 Review ONLY for Project Guidelines adherence:
-- DTOs prefixed DTO_ and placed in PIP.WebApiModels
+- New DTOs prefixed DTO_ and placed in PIP.WebApiModels. Existing PIP.WebApiModels classes named `xxxxxxxModel.cs` are the established convention, not a violation — only flag new classes that skip the DTO_ prefix.
 - IConcurrencyEntity DTOs must include RowVersion on request and response
 - AutoMapper profiles for entity↔DTO mapping (never inline)
 - No edits to auto-generated OpenAPI client (frontend/PipFrontend/ClientApp/src/app/core/api-resources/)
