@@ -3,7 +3,7 @@ name: pip-code-reviewer
 description: Comprehensive multi-dimension code review of the current branch's changes (diff against master) before merging or opening a PR in the PIP repo. Use whenever the user asks to review, audit, or double-check their branch, changes, or diff — even a bare "review this branch" or "check my changes" with no specific concern named — as well as when they call out quality, security vulnerabilities (SQL injection, XSS, OWASP Top 10), PIP project guidelines, architectural patterns, test-coverage gaps in changed code, duplicate/copy-pasted code, or performance issues. This skill does NOT cover writing new tests, patching one already-identified line, or a standalone whole-codebase/whole-project audit with no branch or PR in scope — it only reviews a branch's diff.
 disable-model-invocation: false
 context: fork
-tools: Read, Edit, Write, Glob, Grep, Bash, Workflow, TaskOutput
+tools: Read, Edit, Write, Glob, Grep, Bash, Agent
 ---
 
 # PIP Code Reviewer
@@ -61,66 +61,44 @@ Collect the results into a `dimensions` array of `{ key, label, prompt }` object
 
 ### 3. Fan Out Review SubAgents
 
-Use the `Workflow` tool with the script below. Pass `dimensions` (already fully rendered — no further templating needed inside the script) in via `args`.
-
-```javascript
-export const meta = {
-  name: 'csharp-parallel-review',
-  description: 'Run all C# review dimensions in parallel and synthesize findings',
-  phases: [
-    { title: 'Review' },
-    { title: 'Synthesize' },
-  ],
-}
-
-const FINDING_ITEM = {
-  type: 'object',
-  properties: {
-    location: { type: 'string' },
-    issue: { type: 'string' },
-    impact: { type: 'string' },
-    fix: { type: 'string' },
-  },
-  required: ['location', 'issue', 'impact', 'fix'],
-}
-
-const FINDINGS_SCHEMA = {
-  type: 'object',
-  properties: {
-    dimension: { type: 'string' },
-    critical: { type: 'array', items: FINDING_ITEM },
-    important: { type: 'array', items: FINDING_ITEM },
-    easyfixes: { type: 'array', items: FINDING_ITEM },
-    suggestions: { type: 'array', items: FINDING_ITEM },
-    positives: { type: 'array', items: { type: 'string' } },
-  },
-  required: ['dimension', 'critical', 'important', 'easyfixes', 'suggestions', 'positives'],
-}
-
-const { dimensions } = args
-
-const results = await parallel(dimensions.map(d => () =>
-  agent(d.prompt, { label: d.label, phase: 'Review', schema: FINDINGS_SCHEMA })
-))
-
-phase('Synthesize')
-const combined = results.filter(Boolean)
-return combined
-```
-
-**Critical — block until the workflow actually finishes.** The `Workflow` tool always runs in the background: it returns immediately with a `task_id`/`runId`, and the real results only arrive later via a `<task-notification>`. Because this skill runs in a forked context (`context: fork`), the fork gets exactly one turn to produce its final answer — it will NOT be resumed by a later notification the way a normal top-level session is. If you invoke `Workflow` and then immediately write your final message (e.g. "agents launched, I'll wait..."), the fork ends there and then the *parent* session ends up fielding the per-dimension notifications one at a time, and the fork never performs steps 4-7 (no report file gets written, no fixes get applied, no loop happens).
-
-To avoid this, you MUST immediately follow the `Workflow` call, in the same turn, with a blocking wait for its result before doing anything else:
+Dispatch one `Agent` tool call per entry in `dimensions`, **all in a single assistant message** (this is what makes them run concurrently), and **every call must set `run_in_background: false`**. For each dimension:
 
 ```
-TaskOutput({ task_id: <the id returned by the Workflow call>, block: true, timeout: 600000 })
+Agent({
+  description: d.label,
+  prompt: d.prompt,
+  run_in_background: false,
+})
 ```
 
-Do not produce any text output between the `Workflow` call and the `TaskOutput` block call — do not narrate "waiting for agents." Only after `TaskOutput` returns the combined per-dimension findings array should you proceed to step 4.
+**Critical — foreground calls are the whole safety mechanism, do not weaken this.** This skill runs in a forked context (`context: fork`), which gets exactly one turn to produce its final answer — it is NOT resumed later by a `<task-notification>` the way a normal top-level session is. `run_in_background: false` makes each `Agent` call itself blocking: the tool call does not return a result until that agent has actually finished, so the fork's turn cannot end (and no text can be written) until every dimension agent's findings are already sitting in front of you as tool results. There is no separate "remember to wait" step to skip.
+
+Do NOT set `run_in_background: true`, and do NOT reach for `Workflow`/`TaskOutput` for this fan-out — either reintroduces a detached background task whose completion notification would land on the *parent* session instead of this fork, silently skipping steps 4-7 (no report file gets written, no fixes get applied, no loop happens). Do not write any narrating text ("dispatching agents now...") before all `Agent` results have returned — just make the batched calls and proceed to step 4 once every one of them has a result.
+
+Each dimension agent should return its findings as markdown, using this shape so synthesis in step 4 can parse it consistently:
+
+```
+## Critical
+[Location / Issue / Impact / Fix per finding, or "None"]
+
+## Important
+[...]
+
+## Easy Fixes
+[...]
+
+## Suggestions
+[...]
+
+## Positives
+[bullet list]
+```
+
+Say so explicitly in each dimension's rendered prompt (append this shape to `d.prompt` if the dimension template doesn't already request it) so every agent's response is synthesis-ready.
 
 ### 4. Synthesize and Write Report
 
-After the subagent Workflow completes, you receive an array of per-dimension findings. Before writing the report, **dedupe across dimensions**: some dimensions overlap in scope (e.g. Security and Architecture can both flag the same missing franchise filter), so if two or more findings point at the same location and describe the same underlying issue, merge them into a single entry rather than listing each dimension's copy separately — note in the merged entry which dimensions raised it. Then synthesize the deduped findings into a single review document:
+After all dimension agents have returned, you have one markdown findings response per dimension. Before writing the report, **dedupe across dimensions**: some dimensions overlap in scope (e.g. Security and Architecture can both flag the same missing franchise filter), so if two or more findings point at the same location and describe the same underlying issue, merge them into a single entry rather than listing each dimension's copy separately — note in the merged entry which dimensions raised it. Then synthesize the deduped findings into a single review document:
 
 **Report location**: `docs/CodeReview/Review_[YYYYMMDD_HHMMSS].md`  
 (Create the `docs/CodeReview/` directory if it does not exist.)
